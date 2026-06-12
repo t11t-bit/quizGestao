@@ -166,6 +166,20 @@ const ALL_QUESTIONS = [
 let questions = [], current = 0, score = 0, wrong = 0, answered = false;
 let selectedQty = 10;
 let history = JSON.parse(localStorage.getItem('kaizen_hist') || '[]');
+let playerName = localStorage.getItem('kaizen_name') || '';
+
+// Cole aqui a URL do seu Web App do Google Apps Script (veja instruções)
+const SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyKBzE8HZJjoPqNWZbOcMH9WSjIrH6y6k0E0gavk9nxF9_1lrOiXS1_8uU4pjBcasI/exec";
+
+function sendToSheet(data) {
+  if(!SHEET_WEBHOOK_URL || SHEET_WEBHOOK_URL.startsWith('COLE_AQUI')) return;
+  fetch(SHEET_WEBHOOK_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {'Content-Type': 'text/plain'},
+    body: JSON.stringify(data)
+  }).catch(()=>{});
+}
 
 function shuffle(arr) {
   const a = [...arr];
@@ -182,6 +196,8 @@ function showIntro() {
       <div class="intro-icon">改</div>
       <div class="intro-title">Quiz Kaizen</div>
       <div class="intro-sub">Teste seu conhecimento sobre a filosofia japonesa da melhoria contínua. As perguntas aparecem em ordem aleatória — há explicação após cada resposta.</div>
+      <div class="section-label">Seu nome</div>
+      <input id="player-name" type="text" placeholder="Digite seu nome" value="${playerName}" style="width:100%;padding:12px 14px;border-radius:10px;border:1px solid #444;background:#1a1a1a;color:#fff;font-size:16px;margin-bottom:16px;box-sizing:border-box;" oninput="playerName=this.value">
       <div class="section-label">Quantas perguntas você quer responder?</div>
       <div class="qty-grid">
         ${qtys.map(n=>`
@@ -205,6 +221,8 @@ function selectQty(n) {
 }
 
 function startQuiz() {
+  if(!playerName.trim()) playerName = 'Anônimo';
+  localStorage.setItem('kaizen_name', playerName);
   questions = shuffle(ALL_QUESTIONS).slice(0, selectedQty);
   current = 0; score = 0; wrong = 0; answered = false;
   showQuestion();
@@ -278,6 +296,7 @@ function showResult() {
   history.unshift({date:dateStr, score, wrong, total:questions.length, pct});
   if(history.length>20) history=history.slice(0,20);
   localStorage.setItem('kaizen_hist', JSON.stringify(history));
+  sendToSheet({name:playerName, date:dateStr, score, wrong, total:questions.length, pct, timestamp: now.getTime()});
 
   card.innerHTML = `
     <div class="result-wrap animate-in">
