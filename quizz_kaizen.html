@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Kaizen</title>
+<style>
+  :root[data-theme="dark"] {
+    --bg:#0f0f0f; --surface:#1a1a1a; --surface2:#232323; --border:#2e2e2e;
+    --text:#f0ede8; --text-muted:#888; --text-dim:#555;
+    --accent:#c8f04a; --accent-text:#0f1a00;
+    --correct-bg:#0d2e18; --correct-border:#1e6b37; --correct-text:#5dd68a;
+    --wrong-bg:#2e0d0d; --wrong-border:#7a2020; --wrong-text:#e07070;
+    --info-bg:#111e2e; --info-border:#1f4a7a; --info-text:#7ab8f5;
+    --progress-track:#2e2e2e; --toggle-bg:#232323;
+    --warn-bg:#1e1a00; --warn-text:#d4c040; --warn-border:#4a4200;
+  }
+  :root[data-theme="light"] {
+    --bg:#f5f3ee; --surface:#fff; --surface2:#f0ede8; --border:#ddd9d2;
+    --text:#1a1a1a; --text-muted:#666; --text-dim:#aaa;
+    --accent:#4a8c00; --accent-text:#fff;
+    --correct-bg:#eafaf1; --correct-border:#4caf7d; --correct-text:#1a6b3a;
+    --wrong-bg:#fdf0f0; --wrong-border:#e07070; --wrong-text:#922020;
+    --info-bg:#eef5ff; --info-border:#7ab8f5; --info-text:#1a4a8a;
+    --progress-track:#ddd9d2; --toggle-bg:#e8e5e0;
+    --warn-bg:#fffbe6; --warn-text:#7a6600; --warn-border:#d4c040;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:2rem 1rem 4rem;transition:background .3s,color .3s;}
+  .top-bar{width:100%;max-width:700px;display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;}
+  .logo{font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);}
+  .top-right{display:flex;gap:10px;align-items:center;}
+  .nav-btn{display:flex;align-items:center;gap:6px;background:var(--toggle-bg);border:1px solid var(--border);border-radius:999px;padding:5px 14px;cursor:pointer;font-size:13px;color:var(--text-muted);transition:all .2s;user-select:none;}
+  .nav-btn:hover{color:var(--text);border-color:var(--text-dim);}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem 2.25rem;width:100%;max-width:700px;transition:background .3s,border-color .3s;}
+
+  /* INTRO */
+  .intro-icon{font-size:48px;margin-bottom:1.25rem;}
+  .intro-title{font-size:26px;font-weight:700;margin-bottom:.5rem;}
+  .intro-sub{font-size:15px;color:var(--text-muted);margin-bottom:1.75rem;line-height:1.6;}
+  .intro-meta{display:flex;gap:1.5rem;margin-bottom:1.75rem;}
+  .meta-item{font-size:13px;color:var(--text-muted);}
+  .meta-item strong{color:var(--text);display:block;font-size:15px;}
+  .section-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:.75rem;}
+  .qty-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:1.75rem;}
+  .qty-card{padding:.75rem .5rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;transition:all .2s;}
+  .qty-card:hover{border-color:var(--text-dim);}
+  .qty-card.selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--surface2));}
+  .qty-card .qty-num{font-size:22px;font-weight:700;color:var(--accent);}
+  .qty-card .qty-sub{font-size:11px;color:var(--text-muted);margin-top:2px;}
+  .start-btn{width:100%;padding:.875rem;background:var(--accent);color:var(--accent-text);border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .15s,transform .1s;}
+  .start-btn:hover{opacity:.88;}
+  .start-btn:active{transform:scale(.98);}
+
+  /* QUIZ */
+  .progress-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;}
+  .progress-label{font-size:12px;color:var(--text-dim);}
+  .progress-track{height:4px;background:var(--progress-track);border-radius:4px;margin-bottom:1.75rem;overflow:hidden;}
+  .progress-fill{height:4px;background:var(--accent);border-radius:4px;transition:width .5s cubic-bezier(.4,0,.2,1);}
+  .q-badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:999px;margin-bottom:.875rem;}
+  .badge-mc{background:var(--info-bg);color:var(--info-text);border:1px solid var(--info-border);}
+  .badge-tf{background:var(--warn-bg);color:var(--warn-text);border:1px solid var(--warn-border);}
+  .q-text{font-size:18px;font-weight:600;line-height:1.5;margin-bottom:1.5rem;color:var(--text);}
+  .options{display:flex;flex-direction:column;gap:.6rem;}
+  .opt-btn{display:flex;align-items:center;gap:12px;width:100%;padding:.875rem 1rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;font-size:15px;color:var(--text);cursor:pointer;text-align:left;transition:background .15s,border-color .15s,transform .1s;position:relative;overflow:hidden;}
+  .opt-btn::before{content:'';position:absolute;inset:0;background:var(--accent);opacity:0;transition:opacity .15s;}
+  .opt-btn:hover:not(:disabled)::before{opacity:.06;}
+  .opt-btn:active:not(:disabled){transform:scale(.99);}
+  .opt-btn:disabled{cursor:default;}
+  .opt-letter{width:28px;height:28px;border-radius:50%;background:var(--border);color:var(--text-muted);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s,color .2s;}
+  .opt-btn.correct{background:var(--correct-bg);border-color:var(--correct-border);color:var(--correct-text);}
+  .opt-btn.correct .opt-letter{background:var(--correct-border);color:#fff;}
+  .opt-btn.wrong{background:var(--wrong-bg);border-color:var(--wrong-border);color:var(--wrong-text);}
+  .opt-btn.wrong .opt-letter{background:var(--wrong-border);color:#fff;}
+  .explanation{margin-top:1.25rem;padding:1rem 1.125rem;background:var(--info-bg);border:1px solid var(--info-border);border-radius:10px;font-size:14px;color:var(--info-text);line-height:1.65;animation:fadeIn .3s ease;}
+  .explanation strong{display:block;margin-bottom:.3rem;font-size:12px;letter-spacing:.06em;text-transform:uppercase;opacity:.7;}
+  .next-row{display:flex;justify-content:flex-end;margin-top:1.5rem;animation:fadeIn .3s ease;}
+  .next-btn{padding:.65rem 1.5rem;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;cursor:pointer;transition:background .15s,border-color .15s;}
+  .next-btn:hover{background:var(--surface2);border-color:var(--text-dim);}
+
+  /* RESULTADO */
+  .result-wrap{text-align:center;padding:1rem 0;}
+  .result-emoji{font-size:52px;margin-bottom:1rem;}
+  .result-score{font-size:52px;font-weight:700;color:var(--accent);line-height:1;}
+  .result-total{font-size:18px;color:var(--text-muted);margin-bottom:.25rem;}
+  .result-msg{font-size:16px;color:var(--text);margin:1.25rem 0 1.5rem;line-height:1.6;}
+  .result-bar-wrap{margin:1.25rem 0 1.5rem;}
+  .result-bar-label{font-size:12px;color:var(--text-muted);margin-bottom:.5rem;text-align:left;}
+  .result-bar-bg{height:8px;background:var(--progress-track);border-radius:8px;overflow:hidden;}
+  .result-bar-fill{height:8px;background:var(--accent);border-radius:8px;transition:width 1s cubic-bezier(.4,0,.2,1);}
+  .result-breakdown{display:flex;gap:1rem;margin-bottom:1.5rem;}
+  .rb-item{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.875rem;text-align:center;}
+  .rb-num{font-size:22px;font-weight:700;}
+  .rb-num.green{color:var(--correct-text);}
+  .rb-num.red{color:var(--wrong-text);}
+  .rb-label{font-size:12px;color:var(--text-muted);margin-top:3px;}
+  .result-btns{display:flex;gap:.75rem;}
+  .replay-btn{flex:1;padding:.875rem;background:var(--accent);color:var(--accent-text);border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .15s;}
+  .replay-btn:hover{opacity:.88;}
+  .hist-btn{padding:.875rem 1.25rem;background:transparent;border:1px solid var(--border);border-radius:10px;font-size:14px;color:var(--text-muted);cursor:pointer;transition:background .15s;}
+  .hist-btn:hover{background:var(--surface2);}
+
+  /* HISTÓRICO */
+  .hist-wrap{padding:.5rem 0;}
+  .hist-title{font-size:20px;font-weight:700;margin-bottom:1.5rem;}
+  .hist-empty{text-align:center;color:var(--text-muted);padding:2rem 0;font-size:15px;}
+  .hist-item{display:flex;align-items:center;gap:1rem;padding:1rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:.625rem;}
+  .hist-rank{width:36px;height:36px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text-muted);flex-shrink:0;}
+  .hist-rank.gold{background:#3a2e00;color:#d4a017;}
+  .hist-rank.silver{background:#252525;color:#aaa;}
+  .hist-rank.bronze{background:#2a1800;color:#c87941;}
+  :root[data-theme="light"] .hist-rank.gold{background:#fff8dc;color:#8a6200;}
+  :root[data-theme="light"] .hist-rank.silver{background:#f0f0f0;color:#666;}
+  :root[data-theme="light"] .hist-rank.bronze{background:#fff0e6;color:#8a4010;}
+  .hist-info{flex:1;}
+  .hist-date{font-size:12px;color:var(--text-dim);margin-bottom:2px;}
+  .hist-detail{font-size:14px;color:var(--text-muted);}
+  .hist-pct{font-size:20px;font-weight:700;color:var(--accent);}
+  .hist-medal{font-size:18px;}
+  .back-btn{margin-top:1.25rem;padding:.65rem 1.25rem;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-size:14px;cursor:pointer;transition:background .15s;}
+  .back-btn:hover{background:var(--surface2);}
+  .clear-btn{margin-top:.75rem;margin-left:.75rem;padding:.65rem 1.25rem;background:transparent;border:1px solid var(--wrong-border);border-radius:8px;color:var(--wrong-text);font-size:14px;cursor:pointer;transition:background .15s;}
+  .clear-btn:hover{background:var(--wrong-bg);}
+
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  .animate-in{animation:fadeIn .35s ease;}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <span class="logo">改善 · Kaizen</span>
+  <div class="top-right">
+    <div class="nav-btn" onclick="showHistory()">📋 Histórico</div>
+    <div class="nav-btn" onclick="toggleTheme()">
+      <span id="theme-icon">☀️</span>
+      <span id="theme-label">Modo claro</span>
+    </div>
+  </div>
+</div>
+<div class="card" id="main-card"></div>
+
+<script>
+const ALL_QUESTIONS = [
+  {type:"mc",q:"O que significa a palavra japonesa 'Kaizen'?",opts:["Trabalho em equipe","Melhoria contínua","Qualidade total","Velocidade máxima"],ans:1,exp:"Kaizen vem de 'kai' (mudança) + 'zen' (melhor/bom). A ideia central é evoluir aos poucos, todo dia, sem parar."},
+  {type:"tf",q:"No Kaizen, apenas líderes e gerentes são responsáveis pela melhoria dos processos.",opts:["Verdadeiro","Falso"],ans:1,exp:"Falso! Um dos pilares do Kaizen é a participação de todos — do chão de fábrica à alta liderança. A melhoria é uma responsabilidade coletiva."},
+  {type:"mc",q:"Qual empresa ficou mundialmente famosa por aplicar o Kaizen em sua produção?",opts:["Samsung","Apple","Toyota","Ford"],ans:2,exp:"A Toyota criou o Sistema Toyota de Produção (TPS), que incorporou o Kaizen como prática central e se tornou referência global."},
+  {type:"tf",q:"O Kaizen prefere grandes revoluções e mudanças radicais em vez de pequenas melhorias graduais.",opts:["Verdadeiro","Falso"],ans:1,exp:"Falso! O Kaizen valoriza exatamente o oposto: pequenas mudanças constantes. Mudanças graduais geram menos resistência e resultados mais duradouros."},
+  {type:"mc",q:"O conceito de 'muda' no Kaizen significa:",opts:["Silêncio nas reuniões","Desperdício de recursos e esforço","Liderança participativa","Meta de produção diária"],ans:1,exp:"'Muda' é a palavra japonesa para desperdício — qualquer ação, tempo ou recurso que não agrega valor. Eliminar o muda é central no Kaizen."},
+  {type:"mc",q:"O 'gemba', conceito do Kaizen, significa:",opts:["Reunião de equipe","Relatório de qualidade","O local real onde o trabalho acontece","Meta mensal de melhoria"],ans:2,exp:"'Gemba' é 'o local real'. Líderes devem ir até onde o trabalho de fato ocorre para observar, entender e melhorar os processos."},
+  {type:"tf",q:"O Kaizen pode ser aplicado apenas em fábricas e indústrias.",opts:["Verdadeiro","Falso"],ans:1,exp:"Falso! Hoje o Kaizen é usado em hospitais, escolas, empresas de tecnologia, desenvolvimento de software (Agile/Scrum) e até no desenvolvimento pessoal."},
+  {type:"mc",q:"Qual autor popularizou o Kaizen no Ocidente com um livro publicado em 1986?",opts:["Peter Drucker","Masaaki Imai","W. Edwards Deming","Taiichi Ohno"],ans:1,exp:"Masaaki Imai escreveu 'Kaizen: The Key to Japan's Competitive Success' em 1986, tornando o conceito conhecido mundialmente fora do Japão."},
+  {type:"mc",q:"Qual das ferramentas abaixo está diretamente associada ao Kaizen?",opts:["SWOT","5S","PESTEL","Matriz BCG"],ans:1,exp:"O 5S (Seiri, Seiton, Seiso, Seiketsu, Shitsuke) é uma das principais ferramentas do Kaizen, focada na organização e limpeza do ambiente de trabalho."},
+  {type:"tf",q:"O ciclo PDCA (Plan-Do-Check-Act) é uma ferramenta usada em conjunto com o Kaizen.",opts:["Verdadeiro","Falso"],ans:0,exp:"Verdadeiro! O PDCA é um dos principais ciclos de melhoria associados ao Kaizen — planejar, executar, checar e agir corretivamente de forma contínua."},
+  {type:"mc",q:"A filosofia Kaizen tem influência de qual pensamento cultural japonês?",opts:["Xintoísmo e feudalismo","Budismo e confucionismo","Capitalismo americano","Taylorismo industrial"],ans:1,exp:"O Kaizen carrega traços do budismo (disciplina e esforço constante) e do confucionismo (ética coletiva e aperfeiçoamento moral), além das influências ocidentais de Deming."},
+  {type:"mc",q:"No contexto do Kaizen, 'padronização' significa:",opts:["Fabricar produtos idênticos em série","Tornar cada melhoria o novo padrão mínimo","Seguir as normas do governo","Copiar as práticas da concorrência"],ans:1,exp:"Cada melhoria conquistada vira o novo padrão — o patamar mínimo aceitável. Isso evita regressão e garante que os avanços sejam consolidados."},
+  {type:"tf",q:"'Kaizen' e 'Kaikaku' significam a mesma coisa no contexto da melhoria japonesa.",opts:["Verdadeiro","Falso"],ans:1,exp:"Falso! Kaikaku representa mudança radical e rápida, enquanto Kaizen é melhoria gradual e contínua. São conceitos complementares, mas diferentes."},
+  {type:"mc",q:"O que são os '5 Porquês' no contexto do Kaizen?",opts:["Uma lista de metas mensais","Uma técnica para encontrar a causa raiz de um problema","Um checklist de qualidade","Um sistema de pontuação de desempenho"],ans:1,exp:"Os '5 Porquês' é uma técnica simples: perguntar 'por quê?' repetidamente (geralmente 5 vezes) até chegar à causa raiz de um problema, em vez de tratar apenas os sintomas."},
+  {type:"tf",q:"No Kaizen, errar é considerado algo negativo que deve ser punido.",opts:["Verdadeiro","Falso"],ans:1,exp:"Falso! No Kaizen, o erro é encarado como uma oportunidade de aprendizado e melhoria. A cultura Kaizen estimula identificar falhas sem buscar culpados."},
+  {type:"mc",q:"Qual é o foco principal do Kaizen em relação ao resultado?",opts:["Atingir metas de curto prazo a qualquer custo","Melhorar continuamente o processo para que bons resultados venham naturalmente","Reduzir custos acima de tudo","Superar a concorrência imediatamente"],ans:1,exp:"O Kaizen prioriza melhorar o processo. A crença é que um processo excelente gera bons resultados de forma sustentável — e não o contrário."},
+  {type:"mc",q:"O conceito de 'Jidoka' no Sistema Toyota, relacionado ao Kaizen, significa:",opts:["Produção em larga escala","Automação com toque humano para detectar defeitos","Redução de custos com tecnologia","Entrega no prazo certo"],ans:1,exp:"Jidoka é a capacidade de parar a produção automaticamente quando um defeito é detectado, combinando automação com julgamento humano — parte essencial do Sistema Toyota e do Kaizen."},
+  {type:"tf",q:"O Just in Time (JIT) é uma prática completamente independente e sem relação com o Kaizen.",opts:["Verdadeiro","Falso"],ans:1,exp:"Falso! O Just in Time é uma das principais práticas do Sistema Toyota de Produção e está profundamente ligado ao Kaizen — ambos buscam eliminar desperdícios e melhorar continuamente o fluxo de trabalho."},
+  {type:"mc",q:"Quantos 'S' compõem a metodologia 5S do Kaizen?",opts:["3","4","5","6"],ans:2,exp:"São exatamente 5: Seiri (organizar), Seiton (ordenar), Seiso (limpar), Seiketsu (padronizar) e Shitsuke (sustentar). Cada 'S' representa um passo para um ambiente de trabalho melhor."},
+  {type:"mc",q:"Qual palavra japonesa representa o conceito de 'carga excessiva ou sobrecarga' no Kaizen?",opts:["Muda","Mura","Muri","Moto"],ans:2,exp:"'Muri' significa sobrecarga — exigir mais do que pessoas ou máquinas podem suportar. Junto com Muda (desperdício) e Mura (irregularidade), formam os 3 Ms que o Kaizen busca eliminar."},
+];
+
+let questions = [], current = 0, score = 0, wrong = 0, answered = false;
+let selectedQty = 10;
+let history = JSON.parse(localStorage.getItem('kaizen_hist') || '[]');
+
+function shuffle(arr) {
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+const card = document.getElementById('main-card');
+
+function showIntro() {
+  const qtys = [5, 10, 15, ALL_QUESTIONS.length];
+  card.innerHTML = `
+    <div class="animate-in">
+      <div class="intro-icon">改</div>
+      <div class="intro-title">Quiz Kaizen</div>
+      <div class="intro-sub">Teste seu conhecimento sobre a filosofia japonesa da melhoria contínua. As perguntas aparecem em ordem aleatória — há explicação após cada resposta.</div>
+      <div class="section-label">Quantas perguntas você quer responder?</div>
+      <div class="qty-grid">
+        ${qtys.map(n=>`
+          <div class="qty-card ${n===selectedQty?'selected':''}" onclick="selectQty(${n})">
+            <div class="qty-num">${n}</div>
+            <div class="qty-sub">${n===ALL_QUESTIONS.length?'todas':n<=5?'rápido':n<=10?'médio':'difícil'}</div>
+          </div>`).join('')}
+      </div>
+      <div class="intro-meta">
+        <div class="meta-item"><strong>${ALL_QUESTIONS.length}</strong> perguntas no banco</div>
+        <div class="meta-item"><strong>Misto</strong> múltipla escolha + V/F</div>
+        <div class="meta-item"><strong>Aleatório</strong> ordem das perguntas</div>
+      </div>
+      <button class="start-btn" onclick="startQuiz()">Começar com ${selectedQty} pergunta${selectedQty>1?'s':''} →</button>
+    </div>`;
+}
+
+function selectQty(n) {
+  selectedQty = n;
+  showIntro();
+}
+
+function startQuiz() {
+  questions = shuffle(ALL_QUESTIONS).slice(0, selectedQty);
+  current = 0; score = 0; wrong = 0; answered = false;
+  showQuestion();
+}
+
+function showQuestion() {
+  const q = questions[current];
+  const pct = Math.round((current / questions.length) * 100);
+  const letters = ['A','B','C','D'];
+  const badgeClass = q.type==='mc'?'badge-mc':'badge-tf';
+  const badgeText = q.type==='mc'?'Múltipla escolha':'Verdadeiro ou Falso';
+  card.innerHTML = `
+    <div class="animate-in">
+      <div class="progress-row">
+        <span class="progress-label">Pergunta ${current+1} de ${questions.length}</span>
+        <span class="progress-label">${score} ✓ acertos</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <span class="q-badge ${badgeClass}">${badgeText}</span>
+      <div class="q-text">${q.q}</div>
+      <div class="options">
+        ${q.opts.map((o,i)=>`
+          <button class="opt-btn" onclick="choose(${i})">
+            <span class="opt-letter">${q.type==='tf'?(i===0?'V':'F'):letters[i]}</span>
+            ${o}
+          </button>`).join('')}
+      </div>
+      <div id="exp-wrap"></div>
+      <div id="next-wrap"></div>
+    </div>`;
+  answered = false;
+}
+
+function choose(i) {
+  if(answered) return;
+  answered = true;
+  const q = questions[current];
+  document.querySelectorAll('.opt-btn').forEach((b,idx)=>{
+    b.disabled=true;
+    if(idx===q.ans) b.classList.add('correct');
+    else if(idx===i) b.classList.add('wrong');
+  });
+  if(i===q.ans) score++; else wrong++;
+  const ok = i===q.ans;
+  document.getElementById('exp-wrap').innerHTML = `
+    <div class="explanation animate-in">
+      <strong>${ok?'✓ Correto!':'✗ Errado'}</strong>
+      ${q.exp}
+    </div>`;
+  const isLast = current+1>=questions.length;
+  document.getElementById('next-wrap').innerHTML = `
+    <div class="next-row animate-in">
+      <button class="next-btn" onclick="${isLast?'showResult()':'nextQ()'}">
+        ${isLast?'Ver resultado →':'Próxima →'}
+      </button>
+    </div>`;
+}
+
+function nextQ() { current++; showQuestion(); }
+
+function showResult() {
+  const pct = Math.round((score/questions.length)*100);
+  let emoji, msg;
+  if(pct>=90){emoji='🏆';msg='Excelente! Você domina a filosofia Kaizen!';}
+  else if(pct>=70){emoji='👍';msg='Muito bom! Você entendeu os conceitos principais.';}
+  else if(pct>=50){emoji='📚';msg='Resultado razoável. Vale reler os pontos principais e tentar de novo!';}
+  else{emoji='💪';msg='O Kaizen diz: melhore um pouco a cada dia. Continue estudando!';}
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  history.unshift({date:dateStr, score, wrong, total:questions.length, pct});
+  if(history.length>20) history=history.slice(0,20);
+  localStorage.setItem('kaizen_hist', JSON.stringify(history));
+
+  card.innerHTML = `
+    <div class="result-wrap animate-in">
+      <div class="result-emoji">${emoji}</div>
+      <div class="result-score">${pct}%</div>
+      <div class="result-total">de aproveitamento</div>
+      <div class="result-bar-wrap">
+        <div class="result-bar-label">Desempenho geral</div>
+        <div class="result-bar-bg"><div class="result-bar-fill" id="rbar" style="width:0%"></div></div>
+      </div>
+      <div class="result-breakdown">
+        <div class="rb-item"><div class="rb-num green">${score}</div><div class="rb-label">Acertos</div></div>
+        <div class="rb-item"><div class="rb-num red">${wrong}</div><div class="rb-label">Erros</div></div>
+        <div class="rb-item"><div class="rb-num">${questions.length}</div><div class="rb-label">Total</div></div>
+      </div>
+      <div class="result-msg">${msg}</div>
+      <div class="result-btns">
+        <button class="replay-btn" onclick="showIntro()">Tentar novamente →</button>
+        <button class="hist-btn" onclick="showHistory()">📋</button>
+      </div>
+    </div>`;
+  setTimeout(()=>{ const b=document.getElementById('rbar'); if(b) b.style.width=pct+'%'; },100);
+}
+
+function showHistory() {
+  const medals = ['🥇','🥈','🥉'];
+  const rankClass = ['gold','silver','bronze'];
+  card.innerHTML = `
+    <div class="hist-wrap animate-in">
+      <div class="hist-title">Histórico de partidas</div>
+      ${history.length===0
+        ? `<div class="hist-empty">Nenhuma partida registrada ainda.<br>Complete um quiz para ver seu histórico aqui!</div>`
+        : history.map((h,i)=>`
+          <div class="hist-item">
+            <div class="hist-rank ${i<3?rankClass[i]:''}">${i<3?medals[i]:'#'+(i+1)}</div>
+            <div class="hist-info">
+              <div class="hist-date">${h.date}</div>
+              <div class="hist-detail">${h.score} acertos · ${h.wrong} erros · ${h.total} perguntas</div>
+            </div>
+            <div class="hist-pct">${h.pct}%</div>
+          </div>`).join('')}
+      <div>
+        <button class="back-btn" onclick="showIntro()">← Voltar</button>
+        ${history.length>0?`<button class="clear-btn" onclick="clearHistory()">Apagar histórico</button>`:''}
+      </div>
+    </div>`;
+}
+
+function clearHistory() {
+  if(confirm('Apagar todo o histórico?')) {
+    history = [];
+    localStorage.setItem('kaizen_hist', JSON.stringify(history));
+    showHistory();
+  }
+}
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme', isDark?'light':'dark');
+  document.getElementById('theme-icon').textContent = isDark?'🌙':'☀️';
+  document.getElementById('theme-label').textContent = isDark?'Modo escuro':'Modo claro';
+}
+
+showIntro();
+</script>
+</body>
+</html>
