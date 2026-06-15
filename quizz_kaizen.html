@@ -169,7 +169,7 @@ let history = JSON.parse(localStorage.getItem('kaizen_hist') || '[]');
 let playerName = localStorage.getItem('kaizen_name') || '';
 
 // Cole aqui a URL do seu Web App do Google Apps Script (veja instruções)
-const SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyKBzE8HZJjoPqNWZbOcMH9WSjIrH6y6k0E0gavk9nxF9_1lrOiXS1_8uU4pjBcasI/exec";
+const SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbx-mdCFlAf-2ox4_p7bpwZVfoRcXl2ZgGcTclTxe7EqArYEs74MxJAEWBVY6UT3jEYVAA/exec";
 
 function sendToSheet(data) {
   if(!SHEET_WEBHOOK_URL || SHEET_WEBHOOK_URL.startsWith('COLE_AQUI')) return;
